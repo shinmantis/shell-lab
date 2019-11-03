@@ -168,7 +168,7 @@ void eval(char *cmdline)
   //
   char *argv[MAXARGS];
 
-  cout <<  "eval()" <<  " : " <<  cmdline << endl;
+  //cout <<  "eval()" <<  " : " <<  cmdline << endl;
 
   
 
@@ -186,8 +186,36 @@ void eval(char *cmdline)
   //(quit, jobs, bg, or fg)
   if (!builtin_cmd(argv))
   {
-	  cout << "not a built in function..." << endl;
-	  cout <<  "parseline() argv[0]" <<  " : " <<  argv[0] << endl;
+	 // cout << "not a built in function..." << endl;
+	 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
+
+	  //If the first command is not a builtin, then fork the process
+	  
+
+	  //We know if we are in the forked child process, if the fork command returns 0
+	  if(fork() == 0)
+	  {
+		  //Take the first string command, and pass in the rest as an argument vector
+		  //If this fails, print out an error message and exit ther process
+		  if(execv(argv[0], argv) < 0)
+		  {
+			  //printf("Command does not exist!\n");
+			  //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
+			  exit(0);
+		  }
+
+
+	  }
+
+
+	  //If we are not in a background process, have the parent wait for the child process
+	  //then reap the child process once it's done	
+	  if(!bg)
+	  {
+		  //Wait, but we don't really care about the return value from waiting for the child process
+		  wait(NULL);
+
+	  }
   }
 
   return;
