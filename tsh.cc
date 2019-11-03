@@ -49,6 +49,10 @@ void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
+
+//Custom Error-Handling wrappers
+pid_t Fork(void);
+
 //
 // main - The shell's main routine 
 //
@@ -168,6 +172,8 @@ void eval(char *cmdline)
   //
   char *argv[MAXARGS];
 
+  pid_t pid; /* Process id*/
+
   //cout <<  "eval()" <<  " : " <<  cmdline << endl;
 
   
@@ -186,21 +192,21 @@ void eval(char *cmdline)
   //(quit, jobs, bg, or fg)
   if (!builtin_cmd(argv))
   {
-	 // cout << "not a built in function..." << endl;
-	 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
+	  //cout << "not a built in function..." << endl;
+	  //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
 
-	  //If the first command is not a builtin, then fork the process
-	  
+	  //If the first command is not a builtin, then Fork the process
+	  pid = Fork();
 
 	  //We know if we are in the forked child process, if the fork command returns 0
-	  if(fork() == 0)
+	  if(pid == 0)
 	  {
 		  //Take the first string command, and pass in the rest as an argument vector
 		  //If this fails, print out an error message and exit ther process
 		  if(execv(argv[0], argv) < 0)
 		  {
-			  //printf("Command does not exist!\n");
-			  //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
+			 // printf("Command does not exist!\n");
+			 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
 			  exit(0);
 		  }
 
@@ -215,6 +221,12 @@ void eval(char *cmdline)
 		  //Wait, but we don't really care about the return value from waiting for the child process
 		  wait(NULL);
 
+	  }
+
+	  //If we are in the background process, print the value of bg, the PID value and the command.	
+	  else
+	  {
+		  printf("[%d] (%d) %s",bg, pid, cmdline);
 	  }
   }
 
@@ -240,6 +252,8 @@ int builtin_cmd(char **argv)
   {
 	  exit(0);
   }
+
+
 
 
 
@@ -349,5 +363,17 @@ void sigtstp_handler(int sig)
  *********************/
 
 
+//Error Handling Wrapper as per Steves[110]
+pid_t Fork(void)
+{
+	pid_t pid;
+
+	if ((pid = fork()) < 0)
+	{
+		unix_error("Fork error");
+	}
+
+	return pid;
+}
 
 
