@@ -68,6 +68,7 @@ int main(int argc, char **argv)
   //argv contains the arguments passed to the program. Argv is
   //a 1-D array of strings
   //
+  //source:  https://gnu.org/software/libc/manual/html_node/Using-Getopt.html#Using-Getopt
 
   /* Parse the command line */
   char c;
@@ -185,8 +186,8 @@ void eval(char *cmdline)
   //(quit, jobs, bg, or fg)
   if (!builtin_cmd(argv))
   {
-	  cout << "go fuck yourself" << endl;
-	  cout <<  "parselin()" <<  " : " <<  argv[0] << endl;
+	  cout << "not a built in function..." << endl;
+	  cout <<  "parseline() argv[0]" <<  " : " <<  argv[0] << endl;
   }
 
   return;
