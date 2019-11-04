@@ -30,6 +30,8 @@ using namespace std;
 
 static char prompt[] = "tsh> ";
 int verbose = 0;
+static char childprocs = 0;
+
 
 //
 // You need to implement the functions eval, builtin_cmd, do_bgfg,
@@ -226,7 +228,7 @@ void eval(char *cmdline)
 	  //If we are in the background process, print the value of bg, the PID value and the command.	
 	  else
 	  {
-		  printf("[%d] (%d) %s",bg, pid, cmdline);
+		  printf("[%d] (%d) %s",--childprocs, pid, cmdline);
 	  }
   }
 
@@ -251,6 +253,13 @@ int builtin_cmd(char **argv)
   if(strcmp("quit", argv[0]) == 0)
   {
 	  exit(0);
+  }
+
+  if(strcmp("jobs", argv[0]) == 0)
+  {
+	  cout << "Right o! Ole chap!: " << argv[0]  <<endl;
+	  //list of current jobs
+	  return 1;
   }
 
 
@@ -372,6 +381,8 @@ pid_t Fork(void)
 	{
 		unix_error("Fork error");
 	}
+
+	childprocs++;
 
 	return pid;
 }
