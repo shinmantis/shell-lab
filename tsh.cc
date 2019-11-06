@@ -22,6 +22,10 @@ using namespace std;
 #include "helper-routines.h"
 
 #include <iostream>
+#include <deque>
+#include <list>
+#include <queue>
+#include <vector>
 
 
 //
@@ -31,6 +35,16 @@ using namespace std;
 static char prompt[] = "tsh> ";
 int verbose = 0;
 static char childprocs = 0;
+
+struct child 
+{
+	short jobID = 0;
+	pid_t pid = 0;
+	string state = "";
+	string command = "";
+} ;
+
+queue<child> jobHolder;
 
 
 //
@@ -200,9 +214,13 @@ void eval(char *cmdline)
 	  //If the first command is not a builtin, then Fork the process
 	  pid = Fork();
 
+
 	  //We know if we are in the forked child process, if the fork command returns 0
 	  if(pid == 0)
 	  {
+		  //setpgid(0,0);
+		  
+		 
 		  //Take the first string command, and pass in the rest as an argument vector
 		  //If this fails, print out an error message and exit ther process
 		  if(execv(argv[0], argv) < 0)
@@ -211,6 +229,7 @@ void eval(char *cmdline)
 			 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
 			  exit(0);
 		  }
+
 
 
 	  }
@@ -228,7 +247,22 @@ void eval(char *cmdline)
 	  //If we are in the background process, print the value of bg, the PID value and the command.	
 	  else
 	  {
-		  printf("[%d] (%d) %s",--childprocs, pid, cmdline);
+
+		  short jobID = --childprocs;
+
+		  printf("[%d] (%d) %s",jobID, pid, cmdline);
+		  
+		  //creat a child structure to store child fork information
+		  struct child mychild = {jobID, pid, "Running", cmdline};
+		 
+		  //quality checks
+		  //cout << "structure checK " << " jobID: " << mychild.jobID << endl;
+		  //cout << "structure checK " << " pid: " << mychild.pid << endl;
+		  //cout << "structure checK " << " state: " << mychild.state << endl;
+		  //cout << "structure checK " << " cmd " << mychild.command << endl;
+		  
+		  //store the structure in a queue
+		  jobHolder.push(mychild);
 	  }
   }
 
@@ -257,8 +291,23 @@ int builtin_cmd(char **argv)
 
   if(strcmp("jobs", argv[0]) == 0)
   {
-	  cout << "Right o! Ole chap!: " << argv[0]  <<endl;
-	  //list of current jobs
+
+	  //show the stored jobs in the job holder
+	  while(!jobHolder.empty())
+	  {
+		  //create a variable of type child struct to current child
+		  struct child mychild  = jobHolder.front();
+
+
+		  //no endl with the last cout statement
+		  //the captured command includes user captured carriage return
+		  cout << "[" << mychild.jobID <<"] ";
+		  cout << "(" << mychild.pid << ") ";
+		  cout << mychild.state << " ";
+		  cout << mychild.command;
+
+		  jobHolder.pop();
+	  }	  
 	  return 1;
   }
 
