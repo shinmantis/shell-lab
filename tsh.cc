@@ -240,6 +240,11 @@ void eval(char *cmdline)
 	  if(!bg)
 	  {
 		  //Wait, but we don't really care about the return value from waiting for the child process
+		  //equivalet to  waitpid(-1, &status, 0)
+		  //where pid = -1 pg 744 (the wait set consists of all t parent's child processes. Otherwise pid > 0 is a specific child id.
+		  //where &status = exit status tat will be set to parent by child
+		  //optio = 0 in this case parent will wait until the child is terminate
+		  
 		  wait(NULL);
 
 	  }
@@ -281,6 +286,10 @@ void eval(char *cmdline)
 int builtin_cmd(char **argv) 
 {
   string cmd(argv[0]);
+
+  cout << argv[0] << endl;
+
+
  
   //Check to see if the user wants to exit the shell
   //if the first command is "quit" exit the tiny shell.
