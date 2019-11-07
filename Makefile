@@ -12,7 +12,7 @@ CXX = g++
 ## This assignment does not depend on ia32 vs. ia64,
 ## so we don't include the -m32 option
 ##
-CFLAGS = -Wall -O -g
+CFLAGS = -Wall -O3 -g -std=c++14
 CXXFLAGS=$(CFLAGS)
 FILES = $(TSH) ./myspin ./mysplit ./mystop ./myint
 

@@ -45,7 +45,7 @@ struct child
     char* command;
 } ;
 
-deque<child> jobHolder;
+deque<child*> jobHolder;
 
 
 //
@@ -66,7 +66,8 @@ void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
-void job_printer(child process);
+void job_printer(child* process);
+child* buildChild(int pid, short jobID, char* state, char* location, char* command);
 
 //Custom Error-Handling wrappers
 pid_t Fork(void);
@@ -250,8 +251,8 @@ void eval(char *cmdline)
             //where &status = exit status tat will be set to parent by child
             //optio = 0 in this case parent will wait until the child is terminate
 
-            struct child mychild = {1, pid, "Running", "FG", cmdline};
-            jobHolder.push_back(mychild);
+            child* c = buildChild(1, pid, "Running", "FG", cmdline);
+            jobHolder.push_back(c);
 
             //cout << "Foreground process called " << pid <<endl;
             wait(NULL);
@@ -269,7 +270,7 @@ void eval(char *cmdline)
             printf("[%d] (%d) %s",jobID, pid, cmdline);
 
             //creat a child structure to store child fork information
-            struct child mychild = {jobID, pid, "Running", "BG",cmdline};
+            child* c = buildChild(1, pid, "Running", "BG", cmdline);
 
             //quality checks
             //cout << "structure checK " << " jobID: " << mychild.jobID << endl;
@@ -278,7 +279,7 @@ void eval(char *cmdline)
             //cout << "structure checK " << " cmd " << mychild.command << endl;
 
             //store the structure in a queue
-            jobHolder.push_back(mychild);
+            jobHolder.push_back(c);
         }
     }
 
@@ -307,7 +308,7 @@ int builtin_cmd(char **argv)
 
     if (strcmp(argv[0], "jobs") == 0 || strcmp(argv[0], "j") == 0)
     {
-        for (child c : jobHolder)
+        for (child* c : jobHolder)
         {
             job_printer(c);
         }
@@ -413,18 +414,18 @@ void sigint_handler(int sig)
 	{
 
 		//get the child process in the jobHolder
-		struct child mychild = jobHolder.front();
+		child* mychild = jobHolder.front();
 
 		//Update the state message of the structure
-		mychild.state = "terminated by signal 2";
+		mychild->state = "terminated by signal 2";
 
 		//print out the job information
-		cout << "Job [" << mychild.jobID <<"] ";
-		cout << "(" << mychild.pid << ") ";
-		cout << mychild.state << " " << endl;
+		cout << "Job [" << mychild->jobID <<"] ";
+		cout << "(" << mychild->pid << ") ";
+		cout << mychild->state << " " << endl;
 
 		//Kill the process by passing along the appopriate signal and pid identifier 
-		kill(mychild.pid, sig);
+		kill(mychild->pid, sig);
 	}
 
        	return;
@@ -466,8 +467,19 @@ pid_t Fork(void)
 /*
  * Child printer
  */
-void job_printer(child process)
+void job_printer(child* process)
 {
     printf("pid: %d { job ID: %d, state: %s, location: %s, command: %s}",
-           process.pid, process.jobID, process.state, process.location, process.command);
+           process->pid, process->jobID, process->state, process->location, process->command);
+}
+
+child* buildChild(int pid, short jobID, char* state, char* location, char* command)
+{
+    auto *c = new child();
+    c->pid = pid;
+    c->jobID = jobID;
+    c->state = state;
+    c->location = location;
+    c->command = command;
+    return c;
 }

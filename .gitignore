@@ -66,3 +66,27 @@ cmake-build-debug/CMakeFiles/TargetDirectories.txt
 cmake-build-debug/Makefile
 
 cmake-build-debug/shellLab.cbp
+
+helper-routines.o
+
+jobs.o
+
+myint
+
+myint.dSYM/Contents/Info.plist
+
+myspin
+
+myspin.dSYM/Contents/Info.plist
+
+mysplit
+
+mysplit.dSYM/Contents/Info.plist
+
+mystop
+
+mystop.dSYM/Contents/Info.plist
+
+tsh
+
+tsh.o
