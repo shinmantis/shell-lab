@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
     char cmdline[MAXLINE];
 
-    if ((fgets(cmdline, MAXLINE, stdin) == NULL) && ferror(stdin)) {
+    if ((fgets(cmdline, MAXLINE, stdin) == nullptr) && ferror(stdin)) {
       app_error("fgets error");
     }
     //
@@ -203,7 +203,7 @@ void eval(char *cmdline)
     // in background mode or FALSE if it should run in FG
     //
     int bg = parseline(cmdline, argv);
-    if (argv[0] == NULL)
+    if (argv[0] == nullptr)
         return;   /* ignore empty lines */
 
     //Pass the array of string commands to the builtin function
@@ -255,7 +255,7 @@ void eval(char *cmdline)
             jobHolder.push_back(c);
 
             //cout << "Foreground process called " << pid <<endl;
-            wait(NULL);
+            wait(nullptr);
             jobHolder.front();
             jobHolder.pop_front();
 
@@ -329,10 +329,10 @@ int builtin_cmd(char **argv)
 //
 void do_bgfg(char **argv) 
 {
-  struct job_t *jobp=NULL;
+  struct job_t *jobp = nullptr;
     
   /* Ignore command if no argument */
-  if (argv[1] == NULL) {
+  if (argv[1] == nullptr) {
     printf("%s command requires PID or %%jobid argument\n", argv[0]);
     return;
   }
