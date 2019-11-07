@@ -41,6 +41,7 @@ struct child
 	short jobID = 0;
 	pid_t pid = 0;
 	string state = "";
+	string location = "";
 	string command = "";
 } ;
 
@@ -218,7 +219,7 @@ void eval(char *cmdline)
 	  //We know if we are in the forked child process, if the fork command returns 0
 	  if(pid == 0)
 	  {
-		  //setpgid(0,0);
+		  setpgid(0,0);
 		  
 		 
 		  //Take the first string command, and pass in the rest as an argument vector
@@ -230,6 +231,9 @@ void eval(char *cmdline)
 			  exit(0);
 		  }
 
+
+
+		  return;
 
 
 	  }
@@ -245,7 +249,13 @@ void eval(char *cmdline)
 		  //where &status = exit status tat will be set to parent by child
 		  //optio = 0 in this case parent will wait until the child is terminate
 		  
+		  struct child mychild = {1, pid, "Running", "FG", cmdline};
+		  jobHolder.push(mychild);
+
+		  //cout << "Foreground process called " << pid <<endl;
 		  wait(NULL);
+		  jobHolder.front();
+		  jobHolder.pop();
 
 	  }
 
@@ -258,7 +268,7 @@ void eval(char *cmdline)
 		  printf("[%d] (%d) %s",jobID, pid, cmdline);
 		  
 		  //creat a child structure to store child fork information
-		  struct child mychild = {jobID, pid, "Running", cmdline};
+		  struct child mychild = {jobID, pid, "Running", "BG",cmdline};
 		 
 		  //quality checks
 		  //cout << "structure checK " << " jobID: " << mychild.jobID << endl;
@@ -287,7 +297,7 @@ int builtin_cmd(char **argv)
 {
   string cmd(argv[0]);
 
-  cout << argv[0] << endl;
+ //cout << argv[0] << endl;
 
 
  
@@ -400,7 +410,8 @@ void waitfg(pid_t pid)
 //
 void sigchld_handler(int sig) 
 {
-  return;
+	//cout << "sigchld_handler called with a sig value of: " <<sig << endl;
+	return;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -411,7 +422,28 @@ void sigchld_handler(int sig)
 //
 void sigint_handler(int sig) 
 {
-  return;
+	//cout << "sigint_handler called with a sig value of: " << sig << endl;
+
+	//If a signal of 2 is sent
+	if(sig == 2)
+	{
+
+		//get the child process in the jobHolder
+		struct child mychild = jobHolder.front();
+
+		//Update the state message of the structure
+		mychild.state = "terminated by signal 2";
+
+		//print out the job information
+		cout << "Job [" << mychild.jobID <<"] ";
+		cout << "(" << mychild.pid << ") ";
+		cout << mychild.state << " " << endl;
+
+		//Kill the process by passing along the appopriate signal and pid identifier 
+		kill(mychild.pid, sig);
+	}
+
+       	return;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -420,9 +452,11 @@ void sigint_handler(int sig)
 //     the user types ctrl-z at the keyboard. Catch it and suspend the
 //     foreground job by sending it a SIGTSTP.  
 //
-void sigtstp_handler(int sig) 
+void sigtstp_handler(int sig)
 {
-  return;
+
+	//cout << "sigstp_handler called with a a sign value of: " << sig << endl;
+	return;
 }
 
 /*********************
