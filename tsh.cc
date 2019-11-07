@@ -36,16 +36,16 @@ static char prompt[] = "tsh> ";
 int verbose = 0;
 static char childprocs = 0;
 
-struct child 
+struct child
 {
-	short jobID = 0;
-	pid_t pid = 0;
-	string state = "";
-	string location = "";
-	string command = "";
+    short jobID = 0;
+    pid_t pid = 0;
+    char* state;
+    char* location;
+    char* command;
 } ;
 
-queue<child> jobHolder;
+deque<child> jobHolder;
 
 
 //
@@ -66,6 +66,7 @@ void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
+void job_printer(child process);
 
 //Custom Error-Handling wrappers
 pid_t Fork(void);
@@ -178,110 +179,110 @@ int main(int argc, char **argv)
 // background children don't receive SIGINT (SIGTSTP) from the kernel
 // when we type ctrl-c (ctrl-z) at the keyboard.
 //
-void eval(char *cmdline) 
+void eval(char *cmdline)
 {
-  /* Parse command line */
-  //
-  // The 'argv' vector is filled in by the parseline
-  // routine below. It provides the arguments needed
-  // for the execve() routine, which you'll need to
-  // use below to launch a process.
-  //
-  char *argv[MAXARGS];
+    /* Parse command line */
+    //
+    // The 'argv' vector is filled in by the parseline
+    // routine below. It provides the arguments needed
+    // for the execve() routine, which you'll need to
+    // use below to launch a process.
+    //
+    char *argv[MAXARGS];
 
-  pid_t pid; /* Process id*/
+    pid_t pid; /* Process id*/
 
-  //cout <<  "eval()" <<  " : " <<  cmdline << endl;
-
-  
-
-
-  //
-  // The 'bg' variable is TRUE if the job should run
-  // in background mode or FALSE if it should run in FG
-  //
-  int bg = parseline(cmdline, argv); 
-  if (argv[0] == NULL)
-    return;   /* ignore empty lines */
-
-  //Pass the array of string commands to the builtin function
-  //To determine if the first command is one of the selected builtins
-  //(quit, jobs, bg, or fg)
-  if (!builtin_cmd(argv))
-  {
-	  //cout << "not a built in function..." << endl;
-	  //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
-
-	  //If the first command is not a builtin, then Fork the process
-	  pid = Fork();
-
-
-	  //We know if we are in the forked child process, if the fork command returns 0
-	  if(pid == 0)
-	  {
-		  setpgid(0,0);
-		  
-		 
-		  //Take the first string command, and pass in the rest as an argument vector
-		  //If this fails, print out an error message and exit ther process
-		  if(execv(argv[0], argv) < 0)
-		  {
-			 // printf("Command does not exist!\n");
-			 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
-			  exit(0);
-		  }
+    //cout <<  "eval()" <<  " : " <<  cmdline << endl;
 
 
 
-		  return;
+
+    //
+    // The 'bg' variable is TRUE if the job should run
+    // in background mode or FALSE if it should run in FG
+    //
+    int bg = parseline(cmdline, argv);
+    if (argv[0] == NULL)
+        return;   /* ignore empty lines */
+
+    //Pass the array of string commands to the builtin function
+    //To determine if the first command is one of the selected builtins
+    //(quit, jobs, bg, or fg)
+    if (!builtin_cmd(argv))
+    {
+        //cout << "not a built in function..." << endl;
+        //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
+
+        //If the first command is not a builtin, then Fork the process
+        pid = Fork();
 
 
-	  }
+        //We know if we are in the forked child process, if the fork command returns 0
+        if(pid == 0)
+        {
+            setpgid(0,0);
 
 
-	  //If we are not in a background process, have the parent wait for the child process
-	  //then reap the child process once it's done	
-	  if(!bg)
-	  {
-		  //Wait, but we don't really care about the return value from waiting for the child process
-		  //equivalet to  waitpid(-1, &status, 0)
-		  //where pid = -1 pg 744 (the wait set consists of all t parent's child processes. Otherwise pid > 0 is a specific child id.
-		  //where &status = exit status tat will be set to parent by child
-		  //optio = 0 in this case parent will wait until the child is terminate
-		  
-		  struct child mychild = {1, pid, "Running", "FG", cmdline};
-		  jobHolder.push(mychild);
+            //Take the first string command, and pass in the rest as an argument vector
+            //If this fails, print out an error message and exit ther process
+            if(execv(argv[0], argv) < 0)
+            {
+                // printf("Command does not exist!\n");
+                // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
+                exit(0);
+            }
 
-		  //cout << "Foreground process called " << pid <<endl;
-		  wait(NULL);
-		  jobHolder.front();
-		  jobHolder.pop();
 
-	  }
 
-	  //If we are in the background process, print the value of bg, the PID value and the command.	
-	  else
-	  {
+            return;
 
-		  short jobID = --childprocs;
 
-		  printf("[%d] (%d) %s",jobID, pid, cmdline);
-		  
-		  //creat a child structure to store child fork information
-		  struct child mychild = {jobID, pid, "Running", "BG",cmdline};
-		 
-		  //quality checks
-		  //cout << "structure checK " << " jobID: " << mychild.jobID << endl;
-		  //cout << "structure checK " << " pid: " << mychild.pid << endl;
-		  //cout << "structure checK " << " state: " << mychild.state << endl;
-		  //cout << "structure checK " << " cmd " << mychild.command << endl;
-		  
-		  //store the structure in a queue
-		  jobHolder.push(mychild);
-	  }
-  }
+        }
 
-  return;
+
+        //If we are not in a background process, have the parent wait for the child process
+        //then reap the child process once it's done
+        if(!bg)
+        {
+            //Wait, but we don't really care about the return value from waiting for the child process
+            //equivalet to  waitpid(-1, &status, 0)
+            //where pid = -1 pg 744 (the wait set consists of all t parent's child processes. Otherwise pid > 0 is a specific child id.
+            //where &status = exit status tat will be set to parent by child
+            //optio = 0 in this case parent will wait until the child is terminate
+
+            struct child mychild = {1, pid, "Running", "FG", cmdline};
+            jobHolder.push_back(mychild);
+
+            //cout << "Foreground process called " << pid <<endl;
+            wait(NULL);
+            jobHolder.front();
+            jobHolder.pop_front();
+
+        }
+
+            //If we are in the background process, print the value of bg, the PID value and the command.
+        else
+        {
+
+            short jobID = --childprocs;
+
+            printf("[%d] (%d) %s",jobID, pid, cmdline);
+
+            //creat a child structure to store child fork information
+            struct child mychild = {jobID, pid, "Running", "BG",cmdline};
+
+            //quality checks
+            //cout << "structure checK " << " jobID: " << mychild.jobID << endl;
+            //cout << "structure checK " << " pid: " << mychild.pid << endl;
+            //cout << "structure checK " << " state: " << mychild.state << endl;
+            //cout << "structure checK " << " cmd " << mychild.command << endl;
+
+            //store the structure in a queue
+            jobHolder.push_back(mychild);
+        }
+    }
+
+    return;
 }
 
 
@@ -293,48 +294,31 @@ void eval(char *cmdline)
 // string comparisons; however, the do_bgfg routine will need 
 // to use the argv array as well to look for a job number.
 //
-int builtin_cmd(char **argv) 
+int builtin_cmd(char **argv)
 {
-  string cmd(argv[0]);
-
- //cout << argv[0] << endl;
+    string cmd(argv[0]);
 
 
- 
-  //Check to see if the user wants to exit the shell
-  //if the first command is "quit" exit the tiny shell.
-  if(strcmp("quit", argv[0]) == 0)
-  {
-	  exit(0);
-  }
+    if (strcmp(argv[0], "quit") == 0 || strcmp(argv[0], "q") == 0)
+    {
+        printf("Quitting...\n");
+        exit(0);
+    }
 
-  if(strcmp("jobs", argv[0]) == 0)
-  {
+    if (strcmp(argv[0], "jobs") == 0 || strcmp(argv[0], "j") == 0)
+    {
+        for (child c : jobHolder)
+        {
+            job_printer(c);
+        }
+    }
 
-	  //show the stored jobs in the job holder
-	  while(!jobHolder.empty())
-	  {
-		  //create a variable of type child struct to current child
-		  struct child mychild  = jobHolder.front();
+    if (strcmp(argv[0], "bg") == 0 || strcmp(argv[0], "fg") == 0)
+    {
+        do_bgfg(argv);
+    }
 
-
-		  //no endl with the last cout statement
-		  //the captured command includes user captured carriage return
-		  cout << "[" << mychild.jobID <<"] ";
-		  cout << "(" << mychild.pid << ") ";
-		  cout << mychild.state << " ";
-		  cout << mychild.command;
-
-		  jobHolder.pop();
-	  }	  
-	  return 1;
-  }
-
-
-
-
-
-  return 0;     /* not a builtin command */
+    return 0;     /* not a builtin command */
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -479,4 +463,11 @@ pid_t Fork(void)
 	return pid;
 }
 
-
+/*
+ * Child printer
+ */
+void job_printer(child process)
+{
+    printf("pid: %d { job ID: %d, state: %s, location: %s, command: %s}",
+           process.pid, process.jobID, process.state, process.location, process.command);
+}
