@@ -415,18 +415,16 @@ void sigint_handler(int sig)
 	{
 
 		//get the child process in the jobHolder
-		child* mychild = jobHolder.front();
+		child* c = jobHolder.front();
 
 		//Update the state message of the structure
-		mychild->state = "terminated by signal 2";
+		c->state = "terminated by signal 2";
 
 		//print out the job information
-		cout << "Job [" << mychild->jobID <<"] ";
-		cout << "(" << mychild->pid << ") ";
-		cout << mychild->state << " " << endl;
+		job_printer(c);
 
 		//Kill the process by passing along the appopriate signal and pid identifier 
-		kill(mychild->pid, sig);
+		kill(c->pid, sig);
 	}
 
        	return;
@@ -470,8 +468,9 @@ pid_t Fork(void)
  */
 void job_printer(child* process)
 {
-    printf("pid: %d { job ID: %d, state: %s, location: %s, command: %s}",
-           process->pid, process->jobID, process->state, process->location, process->command);
+    cout << "Job [" << process->jobID <<"] ";
+    cout << "(" << process->pid << ") ";
+    cout << process->state << " " << endl;
 }
 
 child* buildChild(int pid, short jobID, char* state, char* location, char* command)
