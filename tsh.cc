@@ -316,6 +316,7 @@ int builtin_cmd(char **argv)
 
     if (strcmp(argv[0], "bg") == 0 || strcmp(argv[0], "fg") == 0)
     {
+        //TODO: This is not finished.
         do_bgfg(argv);
     }
 
