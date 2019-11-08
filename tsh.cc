@@ -249,13 +249,15 @@ void eval(char *cmdline)
 		  //where &status = exit status tat will be set to parent by child
 		  //optio = 0 in this case parent will wait until the child is terminate
 		  
-		  struct child mychild = {1, pid, "Running", "FG", cmdline};
-		  jobHolder.push(mychild);
+		 // struct child mychild = {1, pid, "Running", "FG", cmdline};
+		 // jobHolder.push(mychild);
+		 
+		  addjob({pid, ++job, 1, cmdline);
 
 		  //cout << "Foreground process called " << pid <<endl;
 		  wait(NULL);
-		  jobHolder.front();
-		  jobHolder.pop();
+		  //jobHolder.front();
+		 // jobHolder.pop();
 
 	  }
 
@@ -263,21 +265,20 @@ void eval(char *cmdline)
 	  else
 	  {
 
-		  short jobID = --childprocs;
 
 		  printf("[%d] (%d) %s",jobID, pid, cmdline);
-		  
-		  //creat a child structure to store child fork information
-		  struct child mychild = {jobID, pid, "Running", "BG",cmdline};
 		 
-		  //quality checks
-		  //cout << "structure checK " << " jobID: " << mychild.jobID << endl;
-		  //cout << "structure checK " << " pid: " << mychild.pid << endl;
-		  //cout << "structure checK " << " state: " << mychild.state << endl;
-		  //cout << "structure checK " << " cmd " << mychild.command << endl;
+		 
+		  addjob({pid, ++job, 2, cmdline})
+
+
+		  //creat a child structure to store child fork information
+		  cout << "structure check " << " jobID: " << mychild.jobID << endl;
+		  cout << "structure check " << " pid: " << mychild.pid << endl;
+		  cout << "structure check " << " state: " << mychild.state << endl;
+		  cout << "structure check " << " location: " << mychild.location << endl;
+		  cout << "structure checK " << " cmd: " << mychild.command << endl;
 		  
-		  //store the structure in a queue
-		  jobHolder.push(mychild);
 	  }
   }
 
@@ -316,6 +317,11 @@ int builtin_cmd(char **argv)
 	  {
 		  //create a variable of type child struct to current child
 		  struct child mychild  = jobHolder.front();
+		  cout << "structure check " << " jobID: " << mychild.jobID << endl;
+		  cout << "structure check " << " pid: " << mychild.pid << endl;
+		  cout << "structure check " << " state: " << mychild.state << endl;
+		  cout << "structure check " << " location: " << mychild.location << endl;
+		  cout << "structure checK " << " cmd: " << mychild.command << endl;
 
 
 		  //no endl with the last cout statement
@@ -422,7 +428,7 @@ void sigchld_handler(int sig)
 //
 void sigint_handler(int sig) 
 {
-	//cout << "sigint_handler called with a sig value of: " << sig << endl;
+	cout << "sigint_handler called with a sig value of: " << sig << endl;
 
 	//If a signal of 2 is sent
 	if(sig == 2)
