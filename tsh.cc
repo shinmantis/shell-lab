@@ -365,18 +365,21 @@ void do_bgfg(char **argv)
         kill(-pid, SIGCONT);
 
         /*
-         *
+         * Set background job state.
          */
         if (0 == strcmp(argv[0], "bg"))
         {
-            job->state = FG;
-            waitfg(pid);
-        }
-
-        else
-        {
             printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
             job->state = BG;
+        }
+
+        /*
+         * Set foreground job state.
+         */
+        else
+        {
+            job->state = FG;
+            waitfg(pid);
         }
     }
 }
