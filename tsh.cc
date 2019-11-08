@@ -6,15 +6,15 @@
 
 using namespace std;
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <string.h>
-#include <ctype.h>
-#include <signal.h>
+#include <cstring>
+#include <cctype>
+#include <csignal>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <errno.h>
+#include <cerrno>
 #include <string>
 
 #include "globals.h"
@@ -212,7 +212,7 @@ void eval(char *cmdline)
         /*
          * Make sure we have a valid fork.
          */
-        if (pid < 0)
+        if (0 > pid)
         {
             /*
              * This helper function will exit with code 1;
@@ -222,7 +222,7 @@ void eval(char *cmdline)
         /*
          * If Fork() returns 0 we are in the new process.
          */
-        else if(pid == 0)
+        else if (0 == pid)
         {
             setpgid(0,0);
             /*
@@ -278,7 +278,7 @@ int builtin_cmd(char **argv)
     /*
      * Quit.
      */
-    if (strcmp(argv[0], "quit") == 0)
+    if (0 == strcmp(argv[0], "quit"))
     {
         exit(0);
     }
@@ -286,7 +286,7 @@ int builtin_cmd(char **argv)
     /*
      * Print jobs.
      */
-    if (strcmp(argv[0], "jobs") == 0)
+    if (0 == strcmp(argv[0], "jobs"))
     {
         listjobs(jobs);
         return 1;
@@ -295,7 +295,7 @@ int builtin_cmd(char **argv)
     /*
      * DO foreground or background operations.
      */
-    if (strcmp(argv[0], "bg") == 0 || strcmp(argv[0], "fg") == 0)
+    if (0 == strcmp(argv[0], "bg") || 0 == strcmp(argv[0], "fg"))
     {
         do_bgfg(argv);
         return 1;
@@ -318,59 +318,67 @@ void do_bgfg(char **argv)
     /*
      * Ignore blank lines.
      */
-    if (arg == nullptr) {
+    if (nullptr == arg) {
         printf("%s command requires PID or %%jobid argument\n", argv[0]);
         return;
     }
-
-    /*
-     * Parse the args for a job id.
-     */
-    if (arg[0] == '%')
+    else
     {
-        jid = atoi(&arg[1]);
-        job = getjobjid(jobs, jid);
-
-        if (job == nullptr)
+        /*
+         * Parse the args for a job id.
+         */
+        if ('%' == arg[0])
         {
-            printf("(%d): No such job\n", jid);
+            jid = atoi(&arg[1]);
+            job = getjobjid(jobs, jid);
+
+            if (job == nullptr)
+            {
+                printf("(%d): Job not found.\n", jid);
+                return;
+            }
+            pid = job->pid;
+        }
+        /*
+         * Parse the args for a process id.
+         */
+        else if (isdigit(arg[0]))
+        {
+            pid = atoi(arg);
+            job = getjobpid(jobs, pid);
+
+            if (job == nullptr)
+            {
+                printf("(%d): Process not found.\n", pid);
+                return;
+            }
+        }
+        /*
+         * Invalid args.
+         */
+        else
+        {
+            printf("%s: argument must be a PID or %%jobid\n", argv[0]);
             return;
         }
-        pid = job->pid;
-    }
 
-    /* Parse the required PID or %JID arg */
-    if (isdigit(argv[1][0])) {
-        pid_t pid = atoi(argv[1]);
-        if (!(jobp = getjobpid(jobs, pid))) {
-            printf("(%d): No such process\n", pid);
-            return;
+        kill(-pid, SIGCONT);
+
+        /*
+         *
+         */
+        if (0 == strcmp(argv[0], "bg"))
+        {
+            job->state = FG;
+            waitfg(pid);
+        }
+
+        else
+        {
+            printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
+            job->state = BG;
         }
     }
-    else if (argv[1][0] == '%') {
-        int jid = atoi(&argv[1][1]);
-        if (!(jobp = getjobjid(jobs, jid))) {
-            printf("%s: No such job\n", argv[1]);
-            return;
-        }
-    }
-    else {
-        printf("%s: argument must be a PID or %%jobid\n", argv[0]);
-        return;
-    }
-
-    //
-    // You need to complete rest. At this point,
-    // the variable 'jobp' is the job pointer
-    // for the job ID specified as an argument.
-    //
-    // Your actions will depend on the specified command
-    // so we've converted argv[0] to a string (cmd) for
-    // your benefit.
-    //
-    string cmd(argv[0]);
-
-    return;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -388,7 +396,7 @@ void waitfg(pid_t pid)
      * Check that pid is valid and jobs is not null.
      * We return empty if so.
      */
-    if (pid <= 0 || job == nullptr)
+    if (0 >= pid || nullptr == job)
     {
         return;
     }
