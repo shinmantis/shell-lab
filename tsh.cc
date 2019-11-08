@@ -11,21 +11,13 @@ using namespace std;
 #include <unistd.h>
 #include <cstring>
 #include <cctype>
-#include <csignal>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <cerrno>
 #include <string>
 
 #include "globals.h"
 #include "jobs.h"
 #include "helper-routines.h"
-
-#include <iostream>
-#include <deque>
-#include <list>
-#include <queue>
-#include <vector>
 
 #define MILLISEC_100 100000
 
@@ -36,7 +28,6 @@ using namespace std;
 
 static char prompt[] = "tsh> ";
 int verbose = 0;
-static char childprocs = 0;
 
 
 
@@ -58,8 +49,7 @@ void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
-//Custom Error-Handling wrappers
-pid_t Fork(void);
+int pidWaiter(job_t* jobs, int status);
 
 //
 // main - The shell's main routine
@@ -124,7 +114,7 @@ int main(int argc, char **argv)
     //
     // Execute the shell's read/eval loop
     //
-    for(;;) {
+    while (true) {
         //
         // Read command line
         //
@@ -207,7 +197,7 @@ void eval(char *cmdline)
         //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
 
         //If the first command is not a builtin, then Fork the process
-        pid = Fork();
+        pid = fork();
 
         /*
          * Make sure we have a valid fork.
@@ -429,32 +419,57 @@ void waitfg(pid_t pid)
 //
 void sigchld_handler(int sig)
 {
-    //cout << "sigchld_handler called with a sig value of: " <<sig << endl;
-    return;
+    pid_t pid;
+    int jid;
+    int status = 0;
+
+    while (0 < (pid = pidWaiter(jobs, status)))
+    {
+        if (WIFSTOPPED(status))
+        {
+            getjobpid(jobs, pid)->state = ST;
+            jid = pid2jid(pid);
+            printf("Job [%d] (%d) Stopped by signal %d\n", jid, pid, WSTOPSIG(status));
+        }
+        else if (WIFSIGNALED(status))
+        {
+            jid = pid2jid(pid);
+            printf("Job [%d] (%d) terminated by signal %d\n", jid, pid, WTERMSIG(status));
+            deletejob(jobs, pid);
+        }
+        else if (WIFEXITED(status))
+        {
+            deletejob(jobs, pid);
+        }
+    }
+}
+
+int pidWaiter(job_t* jobs, int status)
+{
+    /*
+     * Helper function to make the wait condition easier to read.
+     */
+    return waitpid(fgpid(jobs), &status, WNOHANG | WUNTRACED);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// sigint_handler - The kernel sends a SIGINT to the shell whenver the
+// sigint_handler - The kernel sends a SIGINT to the shell whenever the
 //    user types ctrl-c at the keyboard.  Catch it and send it along
 //    to the foreground job.
 //
 void sigint_handler(int sig)
 {
-    //cout << "sigint_handler called with a sig value of: " << sig << endl;
+    /*
+     * Kill sounds terrible, but we use it to handle the process
+     * with whatever the incoming signal does.
+     */
+    pid_t pid = fgpid(jobs);
 
-    //If a signal of 2 is sent
-    if(sig == 2)
+    if (pid != 0)
     {
-
-        //get the child process in the jobHolder
-        pid_t pid = fgpid(jobs);
-
-        //Kill the process by passing along the appopriate signal and pid identifier
-        kill(pid, sig);
+        kill(-pid, sig);
     }
-
-    return;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -465,27 +480,13 @@ void sigint_handler(int sig)
 //
 void sigtstp_handler(int sig)
 {
-
-    //cout << "sigstp_handler called with a a sign value of: " << sig << endl;
-    return;
+    /*
+     * This is identical functionality as the siginint handler so lets
+     * reduce, reuse, recycle a bit here.
+     */
+    sigint_handler(sig);
 }
 
 /*********************
  * End signal handlers
  *********************/
-
-
-//Error Handling Wrapper as per Steves[110]
-pid_t Fork(void)
-{
-    pid_t pid;
-
-    if ((pid = fork()) < 0)
-    {
-        unix_error("Fork error");
-    }
-
-    childprocs++;
-
-    return pid;
-}
