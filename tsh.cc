@@ -34,19 +34,6 @@ using namespace std;
 
 static char prompt[] = "tsh> ";
 int verbose = 0;
-static char childprocs = 0;
-
-struct child 
-{
-	short jobID = 0;
-	pid_t pid = 0;
-	string state = "";
-	string location = "";
-	string command = "";
-} ;
-
-queue<child> jobHolder;
-
 
 //
 // You need to implement the functions eval, builtin_cmd, do_bgfg,
@@ -66,9 +53,11 @@ void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
+void Sigprocmask(int how, const sigset_t *set, sigset_t *oldest);
 
 //Custom Error-Handling wrappers
 pid_t Fork(void);
+void Kill(pid_t pid, int sig);
 
 //
 // main - The shell's main routine 
@@ -158,6 +147,7 @@ int main(int argc, char **argv)
     //
     // Evaluate command line
     //
+    //
     eval(cmdline);
     fflush(stdout);
     fflush(stdout);
@@ -188,8 +178,9 @@ void eval(char *cmdline)
   // use below to launch a process.
   //
   char *argv[MAXARGS];
-
   pid_t pid; /* Process id*/
+  struct job_t *job;
+  sigset_t mask;
 
   //cout <<  "eval()" <<  " : " <<  cmdline << endl;
 
@@ -200,6 +191,7 @@ void eval(char *cmdline)
   // The 'bg' variable is TRUE if the job should run
   // in background mode or FALSE if it should run in FG
   //
+
   int bg = parseline(cmdline, argv); 
   if (argv[0] == NULL)
     return;   /* ignore empty lines */
@@ -207,24 +199,26 @@ void eval(char *cmdline)
   //Pass the array of string commands to the builtin function
   //To determine if the first command is one of the selected builtins
   //(quit, jobs, bg, or fg)
+ 
   if (!builtin_cmd(argv))
   {
 	  //cout << "not a built in function..." << endl;
 	  //cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
 
 	  //If the first command is not a builtin, then Fork the process
-	  pid = Fork();
+	  //pid = Fork();
 
 
 	  //We know if we are in the forked child process, if the fork command returns 0
-	  if(pid == 0)
+	  if((pid = Fork()) == 0)
 	  {
+		  
 		  setpgid(0,0);
 		  
 		 
 		  //Take the first string command, and pass in the rest as an argument vector
 		  //If this fails, print out an error message and exit ther process
-		  if(execv(argv[0], argv) < 0)
+		  if(execvp(argv[0], argv) < 0)
 		  {
 			 // printf("Command does not exist!\n");
 			 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
@@ -238,6 +232,8 @@ void eval(char *cmdline)
 
 	  }
 
+	  addjob(jobs, pid, bg ? BG : FG, cmdline);
+
 
 	  //If we are not in a background process, have the parent wait for the child process
 	  //then reap the child process once it's done	
@@ -249,35 +245,21 @@ void eval(char *cmdline)
 		  //where &status = exit status tat will be set to parent by child
 		  //optio = 0 in this case parent will wait until the child is terminate
 		  
-		 // struct child mychild = {1, pid, "Running", "FG", cmdline};
-		 // jobHolder.push(mychild);
-		 
-		  addjob({pid, ++job, 1, cmdline);
-
-		  //cout << "Foreground process called " << pid <<endl;
-		  wait(NULL);
-		  //jobHolder.front();
-		 // jobHolder.pop();
+		  waitfg(pid);
+		  Sigprocmask(SIG_UNBLOCK, &mask, NULL);
+		  return;
 
 	  }
 
 	  //If we are in the background process, print the value of bg, the PID value and the command.	
 	  else
 	  {
+		 job = getjobpid(jobs, pid);
+		 //User the built in features of the lab
+		 Sigprocmask(SIG_UNBLOCK, &mask, NULL);
+		 printf("[%d] (%d) %s",job->jid, job->pid, cmdline);
 
 
-		  printf("[%d] (%d) %s",jobID, pid, cmdline);
-		 
-		 
-		  addjob({pid, ++job, 2, cmdline})
-
-
-		  //creat a child structure to store child fork information
-		  cout << "structure check " << " jobID: " << mychild.jobID << endl;
-		  cout << "structure check " << " pid: " << mychild.pid << endl;
-		  cout << "structure check " << " state: " << mychild.state << endl;
-		  cout << "structure check " << " location: " << mychild.location << endl;
-		  cout << "structure checK " << " cmd: " << mychild.command << endl;
 		  
 	  }
   }
@@ -312,27 +294,7 @@ int builtin_cmd(char **argv)
   if(strcmp("jobs", argv[0]) == 0)
   {
 
-	  //show the stored jobs in the job holder
-	  while(!jobHolder.empty())
-	  {
-		  //create a variable of type child struct to current child
-		  struct child mychild  = jobHolder.front();
-		  cout << "structure check " << " jobID: " << mychild.jobID << endl;
-		  cout << "structure check " << " pid: " << mychild.pid << endl;
-		  cout << "structure check " << " state: " << mychild.state << endl;
-		  cout << "structure check " << " location: " << mychild.location << endl;
-		  cout << "structure checK " << " cmd: " << mychild.command << endl;
-
-
-		  //no endl with the last cout statement
-		  //the captured command includes user captured carriage return
-		  cout << "[" << mychild.jobID <<"] ";
-		  cout << "(" << mychild.pid << ") ";
-		  cout << mychild.state << " ";
-		  cout << mychild.command;
-
-		  jobHolder.pop();
-	  }	  
+	  listjobs2(jobs, 2);  
 	  return 1;
   }
 
@@ -397,7 +359,16 @@ void do_bgfg(char **argv)
 //
 void waitfg(pid_t pid)
 {
-  return;
+
+	//Pass the PID of the foreground process to ge the job structure
+	struct job_t *job = getjobpid(jobs, pid);
+
+	//If the job state is still FG, then continue waiting
+	while(job->state == FG)
+	{
+		sleep(0.01);
+	}
+       	return;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -416,6 +387,19 @@ void waitfg(pid_t pid)
 //
 void sigchld_handler(int sig) 
 {
+	
+	pid_t pid;
+	int status;
+	//struct job_t *job;
+	
+
+	//Recall that WNOHANG will return if none of the child processes have terminated yet
+	while((pid = waitpid(-1, &status, WNOHANG))> 0)
+	{
+		//job = getjobpid(jobs, pid);
+		deletejob(jobs, pid);
+	}
+	
 	//cout << "sigchld_handler called with a sig value of: " <<sig << endl;
 	return;
 }
@@ -428,25 +412,21 @@ void sigchld_handler(int sig)
 //
 void sigint_handler(int sig) 
 {
-	cout << "sigint_handler called with a sig value of: " << sig << endl;
 
-	//If a signal of 2 is sent
-	if(sig == 2)
+	
+	//Get the foreground job id
+	pid_t pid  = fgpid(jobs);
+	
+	//cout << "sig int handler caught: " << sig << " pid: " << pid << endl;	
+
+	//Use it to get the soon to be dead job
+	job_t *deadjob = getjobpid(jobs, pid);
+
+	if(sig == 2 && pid != 0)
 	{
-
-		//get the child process in the jobHolder
-		struct child mychild = jobHolder.front();
-
-		//Update the state message of the structure
-		mychild.state = "terminated by signal 2";
-
-		//print out the job information
-		cout << "Job [" << mychild.jobID <<"] ";
-		cout << "(" << mychild.pid << ") ";
-		cout << mychild.state << " " << endl;
-
-		//Kill the process by passing along the appopriate signal and pid identifier 
-		kill(mychild.pid, sig);
+		//Print BEFORE terminating, otherwise the data is deleted.
+		printf("Job [%d] (%d) terminated by signal 2\r\n", deadjob->jid, deadjob->pid);
+		kill(-pid, sig);
 	}
 
        	return;
@@ -462,6 +442,17 @@ void sigtstp_handler(int sig)
 {
 
 	//cout << "sigstp_handler called with a a sign value of: " << sig << endl;
+
+
+	pid_t pid = fgpid(jobs);
+
+	if(sig == 2 && pid != 0)
+	{
+		
+		cout << "Kill Called from sigstp!" << endl;
+		kill(-pid, sig);
+	}
+	
 	return;
 }
 
@@ -480,9 +471,24 @@ pid_t Fork(void)
 		unix_error("Fork error");
 	}
 
-	childprocs++;
-
 	return pid;
+}
+
+void Kill(pid_t pid, int sig)
+{
+	if(kill(pid, sig) < 0)
+	{
+		unix_error("kill error");
+	}
+}
+
+void Sigprocmask(int how, const sigset_t *set, sigset_t *oldest)
+{
+	if(sigprocmask(how, set, oldest) < 0)
+	{
+		app_error("sigpromask error");
+	}
+
 }
 
 

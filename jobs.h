@@ -40,6 +40,6 @@ struct job_t *getjobpid(struct job_t *jobs, pid_t pid);
 struct job_t *getjobjid(struct job_t *jobs, int jid); 
 int pid2jid(pid_t pid); 
 void listjobs(struct job_t *jobs);
-
+void listjobs2(struct job_t *jobs, int state);
 
 #endif

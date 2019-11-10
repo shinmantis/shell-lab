@@ -158,6 +158,58 @@ void listjobs(struct job_t *jobs)
 	}
     }
 }
+
+
+
+/* listjobs - Print the job list */
+void listjobs2(struct job_t *jobs, int state) 
+{
+    int i;
+    
+    for (i = 0; i < MAXJOBS; i++) {
+	if (jobs[i].pid != 0 && state == 0) {
+	    printf("[%d] (%d) ", jobs[i].jid, jobs[i].pid);
+	    switch (jobs[i].state) {
+		case BG: 
+		    printf("Running ");
+		    break;
+		case FG: 
+		    printf("Foreground ");
+		    break;
+		case ST: 
+		    printf("Stopped ");
+		    break;
+	    default:
+		    printf("listjobs: Internal error: job[%d].state=%d ", 
+			   i, jobs[i].state);
+	    }
+	    printf("%s", jobs[i].cmdline);
+	}
+
+	//print all foreground only
+ 	else if (jobs[i].pid != 0 && state == 1){
+	    printf("[%d] (%d) Foreground %s", jobs[i].jid, jobs[i].pid, jobs[i].cmdline );
+	}
+
+	//print all background only
+ 	else if (jobs[i].pid != 0 && state == 2){
+	    printf("[%d] (%d) Running %s", jobs[i].jid, jobs[i].pid, jobs[i].cmdline );
+	}
+
+	//print all stopped only
+ 	else if (jobs[i].pid != 0 && state == 3){
+	    printf("[%d] (%d) Stopped %s ", jobs[i].jid, jobs[i].pid, jobs[i].cmdline );
+	}
+    
+    }
+
+}
+
+
+
+
+
+
 /******************************
  * end job list helper routines
  ******************************/
