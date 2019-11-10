@@ -384,8 +384,6 @@ void do_bgfg(char **argv)
 	jobp->state = FG;
 	Kill(-jobp->pid, SIGCONT); //Resumes the signal after process is stopped from sigstp
 	waitfg(jobp->pid);
-
-
   }
   
  
