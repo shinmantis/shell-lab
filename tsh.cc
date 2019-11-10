@@ -207,6 +207,9 @@ void eval(char *cmdline)
 
 	  //If the first command is not a builtin, then Fork the process
 	  //pid = Fork();
+	  //
+
+	  //Sigprocmask(SIG_BLOCK, &maskChild, &prev);
 
 
 	  //We know if we are in the forked child process, if the fork command returns 0
@@ -294,7 +297,7 @@ int builtin_cmd(char **argv)
   if(strcmp("jobs", argv[0]) == 0)
   {
 
-	  listjobs2(jobs, 2);  
+	  listjobs2(jobs, 0);  
 	  return 1;
   }
 
@@ -392,12 +395,55 @@ void sigchld_handler(int sig)
 	int status;
 	//struct job_t *job;
 	
+	//cout << "sighchild received: " << sig << endl;
+	//cout << "sighchild status: " << status << endl;
+	//cout << "sighchild signal: " << sig << endl;
+
 
 	//Recall that WNOHANG will return if none of the child processes have terminated yet
 	while((pid = waitpid(-1, &status, WNOHANG))> 0)
 	{
+
+
+		//cout << "Untraced triggered " << endl;
+		//cout << "Untraced status: " << (status) <<endl;
+		//cout << "Untraced pid: "<< pid << endl;
+		//cout << WNOHANG << endl;
+		//cout << WUNTRACED << endl;
 		//job = getjobpid(jobs, pid);
-		deletejob(jobs, pid);
+
+		/*
+		if(WIFEXITED(status))
+		{
+			cout << "Exited Normally status: " << status << endl;
+
+		}
+
+		if(WSTOPSIG(status))
+		{
+		
+			cout << "Child Stopped with code: " << status << endl;
+
+		}
+
+		if(status == CLD_STOPPED)
+		{
+			cout << "Child is currently stopped: "  << status <<  endl;
+			
+
+			if(status == 2)
+			{
+				deletejob(jobs,pid);
+
+
+			}
+		}
+		
+		
+		*/
+		
+		deletejob(jobs,pid);
+	
 	}
 	
 	//cout << "sigchld_handler called with a sig value of: " <<sig << endl;
@@ -422,11 +468,12 @@ void sigint_handler(int sig)
 	//Use it to get the soon to be dead job
 	job_t *deadjob = getjobpid(jobs, pid);
 
+
 	if(sig == 2 && pid != 0)
 	{
 		//Print BEFORE terminating, otherwise the data is deleted.
 		printf("Job [%d] (%d) terminated by signal 2\r\n", deadjob->jid, deadjob->pid);
-		kill(-pid, sig);
+		Kill(-pid, sig);
 	}
 
        	return;
@@ -445,12 +492,20 @@ void sigtstp_handler(int sig)
 
 
 	pid_t pid = fgpid(jobs);
+	job_t *stopjob = getjobpid(jobs, pid);
+	sigset_t maskALL, prevMask;
 
-	if(sig == 2 && pid != 0)
+	if(sig == 20 && pid != 0)
 	{
+
 		
-		cout << "Kill Called from sigstp!" << endl;
-		kill(-pid, sig);
+		printf("Job [%d] (%d) stoppd by signal 20 \r\n", stopjob->jid, stopjob->pid);
+		Sigprocmask(SIG_BLOCK, &maskALL, &prevMask);
+		stopjob->state = ST;
+		Sigprocmask(SIG_SETMASK, &prevMask, NULL);	
+		Kill(-pid, SIGSTOP);
+		
+
 	}
 	
 	return;
