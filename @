@@ -429,6 +429,7 @@ void sigchld_handler(int sig)
 	
 	pid_t pid;
 	int status;
+	struct jobt_t *jobhandler;
 	
 	//cout << "sighchild received: " << sig << endl;
 	//cout << "sighchild status: " << status << endl;
@@ -446,8 +447,7 @@ void sigchld_handler(int sig)
 		//cout << WNOHANG << endl;
 		//cout << WUNTRACED << endl;
 		//job = getjobpid(jobs, pid);
-
-		//cout << "WTERMSIG(status): " << WTERMSIG(status)  << endl;
+		cout << "WTERMSIG(status): " << WTERMSIG(status) << endl;
 
 	        //if a child signal is stopped	
 		if(WSTOPPED)
@@ -472,11 +472,16 @@ void sigchld_handler(int sig)
 		
 
 
-		if(WTERMSIG(status) == 2)
+		//We want to capture a terminated signal, start here
+		else if(WIFSIGNALED(status))
 		{
-			//get the job id from the pid
+			//Th sinal we are looking for here
+			if(WTERMSIG(status) == SIGINT)
+			{
+				//get the job id from the pid
+				int jid = pid2jid(pid);
 
-			int jid = pid2jid(pid);
+				cout << "term jid: " << endl;
 
 			//we are looking for a terminate signal for this case
 			if(jid != 0)
@@ -490,7 +495,11 @@ void sigchld_handler(int sig)
 				return;
 			}
 
-			
+				
+
+
+			}
+
 		}
 		
 		deletejob(jobs,pid);
