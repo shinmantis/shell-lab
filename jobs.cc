@@ -193,7 +193,7 @@ void listjobs2(struct job_t *jobs, int state)
 
 	//print all background only
  	else if (jobs[i].pid != 0 && state == 2){
-	    printf("[%d] (%d) Background %s", jobs[i].jid, jobs[i].pid, jobs[i].cmdline );
+	    printf("[%d] (%d) Running %s", jobs[i].jid, jobs[i].pid, jobs[i].cmdline );
 	}
 
 	//print all stopped only

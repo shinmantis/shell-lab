@@ -179,6 +179,7 @@ void eval(char *cmdline)
   //
   char *argv[MAXARGS];
   pid_t pid; /* Process id*/
+  struct job_t *job;
   sigset_t mask;
 
   //cout <<  "eval()" <<  " : " <<  cmdline << endl;
@@ -211,12 +212,13 @@ void eval(char *cmdline)
 	  //We know if we are in the forked child process, if the fork command returns 0
 	  if((pid = Fork()) == 0)
 	  {
-		 setpgid(0,0);
+		  
+		  setpgid(0,0);
 		  
 		 
 		  //Take the first string command, and pass in the rest as an argument vector
 		  //If this fails, print out an error message and exit ther process
-		  if(execv(argv[0], argv) < 0)
+		  if(execvp(argv[0], argv) < 0)
 		  {
 			 // printf("Command does not exist!\n");
 			 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
@@ -230,6 +232,8 @@ void eval(char *cmdline)
 
 	  }
 
+	  addjob(jobs, pid, bg ? BG : FG, cmdline);
+
 
 	  //If we are not in a background process, have the parent wait for the child process
 	  //then reap the child process once it's done	
@@ -240,27 +244,20 @@ void eval(char *cmdline)
 		  //where pid = -1 pg 744 (the wait set consists of all t parent's child processes. Otherwise pid > 0 is a specific child id.
 		  //where &status = exit status tat will be set to parent by child
 		  //optio = 0 in this case parent will wait until the child is terminate
-		  //cout << "foreground process command: " << argv[0] << endl;
-		  cout << "foreground pid process launched:" << pid << endl;
-		 // addjob(jobs, pid, 1, cmdline);
-		 // Sigprocmask(SIG_UNBLOCK, &mask, NULL);
 		  
-		  //listjobs(jobs);
 		  waitfg(pid);
-		  cout << "process pid returned and deleted " << pid << endl;
-		  //deletejob(jobs, pid); 
+		  Sigprocmask(SIG_UNBLOCK, &mask, NULL);
+		  return;
 
 	  }
 
 	  //If we are in the background process, print the value of bg, the PID value and the command.	
 	  else
 	  {
-
-
+		 job = getjobpid(jobs, pid);
 		 //User the built in features of the lab
-		 addjob(jobs, pid, 2, cmdline);
 		 Sigprocmask(SIG_UNBLOCK, &mask, NULL);
-		 printf("[%d] (%d) %s",pid2jid(pid), pid, cmdline);
+		 printf("[%d] (%d) %s",job->jid, job->pid, cmdline);
 
 
 		  
@@ -362,6 +359,15 @@ void do_bgfg(char **argv)
 //
 void waitfg(pid_t pid)
 {
+
+	//Pass the PID of the foreground process to ge the job structure
+	struct job_t *job = getjobpid(jobs, pid);
+
+	//If the job state is still FG, then continue waiting
+	while(job->state == FG)
+	{
+		sleep(0.01);
+	}
        	return;
 }
 
@@ -381,6 +387,19 @@ void waitfg(pid_t pid)
 //
 void sigchld_handler(int sig) 
 {
+	
+	pid_t pid;
+	int status;
+	//struct job_t *job;
+	
+
+	//Recall that WNOHANG will return if none of the child processes have terminated yet
+	while((pid = waitpid(-1, &status, WNOHANG))> 0)
+	{
+		//job = getjobpid(jobs, pid);
+		deletejob(jobs, pid);
+	}
+	
 	//cout << "sigchld_handler called with a sig value of: " <<sig << endl;
 	return;
 }
@@ -393,23 +412,22 @@ void sigchld_handler(int sig)
 //
 void sigint_handler(int sig) 
 {
-	cout << "sigint_handler called with a sig value of: " << sig << endl;
-	//If a signal of 2 is sent ensure that pid is also not zero
+
 	
-	pid_t pid = fgpid(jobs);
+	//Get the foreground job id
+	pid_t pid  = fgpid(jobs);
+	
+	//cout << "sig int handler caught: " << sig << " pid: " << pid << endl;	
 
-	cout << "sigint_handler found a fg procsss with a pid of: " << pid << endl;
-
-
+	//Use it to get the soon to be dead job
 	job_t *deadjob = getjobpid(jobs, pid);
 
 	if(sig == 2 && pid != 0)
 	{
-		cout << "Kill Called from sigint!" << endl;
-		Kill(-pid, sig);
+		//Print BEFORE terminating, otherwise the data is deleted.
+		printf("Job [%d] (%d) terminated by signal 2\r\n", deadjob->jid, deadjob->pid);
+		kill(-pid, sig);
 	}
-
-	printf("Job [%d] (%d) terminated by signal 2\r\n", deadjob->jid, deadjob->pid);
 
        	return;
 }
@@ -432,7 +450,7 @@ void sigtstp_handler(int sig)
 	{
 		
 		cout << "Kill Called from sigstp!" << endl;
-		Kill(pid, sig);
+		kill(-pid, sig);
 	}
 	
 	return;
