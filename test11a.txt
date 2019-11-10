@@ -1,0 +1,102 @@
+./sdriver.pl -t trace11.txt -s ./tsh -a "-p"
+#
+# trace11.txt - Forward SIGINT to every process in foreground process group
+#
+tsh> ./mysplit 4
+Job [1] (16523) terminated by signal 2
+tsh> /bin/ps a
+  PID TTY      STAT   TIME COMMAND
+  864 tty1     Ssl+   0:00 /usr/lib/gdm3/gdm-x-session gnome-session --autostart /usr/share/gdm/greeter/autostart
+  866 tty1     Sl+    0:01 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/121/gdm/Xauthority -background none -noreset -keeptty -verbose 3
+  920 tty1     Sl+    0:00 /usr/lib/gnome-session/gnome-session-binary --autostart /usr/share/gdm/greeter/autostart
+  988 tty1     Sl+    0:33 /usr/bin/gnome-shell
+ 1008 tty1     Sl     0:00 ibus-daemon --xim --panel disable
+ 1011 tty1     Sl     0:00 /usr/lib/ibus/ibus-dconf
+ 1014 tty1     Sl     0:00 /usr/lib/ibus/ibus-x11 --kill-daemon
+ 1042 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-xsettings
+ 1048 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-a11y-settings
+ 1050 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-clipboard
+ 1051 tty1     Sl+    0:16 /usr/lib/gnome-settings-daemon/gsd-color
+ 1054 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-datetime
+ 1055 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-housekeeping
+ 1056 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-keyboard
+ 1058 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-media-keys
+ 1062 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-mouse
+ 1064 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-power
+ 1067 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-print-notifications
+ 1070 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-rfkill
+ 1072 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-screensaver-proxy
+ 1074 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-sharing
+ 1080 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-smartcard
+ 1083 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-sound
+ 1084 tty1     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-wacom
+ 1132 tty1     Sl     0:00 /usr/lib/ibus/ibus-engine-simple
+ 8420 tty2     Ssl+   0:00 /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu gnome-session --session=ubuntu
+ 8422 tty2     Sl+    3:06 /usr/lib/xorg/Xorg vt2 -displayfd 3 -auth /run/user/1000/gdm/Xauthority -background none -noreset -keeptty -verbose 3
+ 8429 tty2     Sl+    0:00 /usr/lib/gnome-session/gnome-session-binary --session=ubuntu
+ 8566 tty2     Sl+   13:30 /usr/bin/gnome-shell
+ 8586 tty2     Sl     0:46 ibus-daemon --xim --panel disable
+ 8590 tty2     Sl     0:00 /usr/lib/ibus/ibus-dconf
+ 8592 tty2     Sl     0:00 /usr/lib/ibus/ibus-x11 --kill-daemon
+ 8667 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-power
+ 8670 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-print-notifications
+ 8671 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-rfkill
+ 8672 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-screensaver-proxy
+ 8675 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-sharing
+ 8676 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-sound
+ 8681 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-xsettings
+ 8683 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-wacom
+ 8685 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-smartcard
+ 8691 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-a11y-settings
+ 8693 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-clipboard
+ 8696 tty2     Sl+    0:07 /usr/lib/gnome-settings-daemon/gsd-color
+ 8700 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-datetime
+ 8705 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-housekeeping
+ 8709 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-keyboard
+ 8712 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-media-keys
+ 8715 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-mouse
+ 8729 tty2     Sl+    0:00 /usr/lib/gnome-settings-daemon/gsd-printer
+ 8764 tty2     Sl+    0:01 nautilus-desktop
+ 8766 tty2     Sl+    0:00 /usr/lib/gnome-disk-utility/gsd-disk-utility-notify
+ 8844 tty2     Sl     0:17 /usr/lib/ibus/ibus-engine-simple
+ 8887 pts/0    Ss     0:01 bash
+ 8899 tty2     Sl+    0:01 update-notifier
+ 8901 tty2     SLl+   0:06 /usr/bin/gnome-software --gapplication-service
+ 8986 tty2     Sl+    0:00 /usr/lib/deja-dup/deja-dup-monitor
+ 9015 pts/1    Ss     0:00 bash
+ 9029 pts/1    S+     0:31 vim tsh.cc
+ 9779 pts/2    Ss     0:00 bash
+ 9790 pts/2    S+     0:01 vim jobs.cc
+10171 pts/3    Ss     0:00 bash
+10183 pts/3    S+     0:00 vim jobs.h
+10474 pts/0    S     42:01 ./tsh -p
+10478 pts/0    T      0:00 ./myspin 5
+10518 pts/0    S     41:57 ./tsh -p
+10522 pts/0    T      0:00 ./myspin 5
+10581 pts/0    S     41:43 ./tsh -p
+10585 pts/0    T      0:00 ./myspin 5
+10663 pts/0    S     41:30 ./tsh -p
+10667 pts/0    T      0:00 ./myspin 5
+10707 pts/0    S     41:19 ./tsh -p
+10711 pts/0    T      0:00 ./myspin 5
+11034 pts/0    S     40:45 ./tsh -p
+11077 pts/0    S     40:40 ./tsh -p
+11208 pts/0    S     40:30 ./tsh -p
+11212 pts/0    T      0:00 ./myspin 5
+11253 pts/0    S     40:22 ./tsh -p
+11294 pts/0    S     40:20 ./tsh -p
+11335 pts/0    S     40:18 ./tsh -p
+16178 pts/0    S      0:30 ./tsh -p
+16180 pts/0    T      0:00 ./myspin 4
+16220 pts/0    T      0:00 make test10
+16221 pts/0    T      0:00 /bin/sh -c ./sdriver.pl -t trace10.txt -s ./tsh -a "-p"
+16222 pts/0    T      0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+16223 pts/0    Z      0:00 [tsh] <defunct>
+16337 pts/0    S      0:23 ./tsh -p
+16339 pts/0    T      0:00 ./myspin 4
+16484 pts/0    S      0:00 /usr/lib/git-core/git-credential-cache--daemon /home/retset/.cache/git/credential/socket
+16518 pts/0    S+     0:00 make test11
+16519 pts/0    S+     0:00 /bin/sh -c ./sdriver.pl -t trace11.txt -s ./tsh -a "-p"
+16520 pts/0    S+     0:00 /usr/bin/perl ./sdriver.pl -t trace11.txt -s ./tsh -a -p
+16521 pts/0    S+     0:00 ./tsh -p
+16526 pts/0    R      0:00 /bin/ps a
