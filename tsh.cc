@@ -302,6 +302,14 @@ int builtin_cmd(char **argv)
   }
 
 
+  if(strcmp("bg", argv[0]) == 0)
+  {
+	  do_bgfg(argv);
+	  return 1;
+
+  }
+
+
 
 
 
@@ -352,6 +360,20 @@ void do_bgfg(char **argv)
   // your benefit.
   //
   string cmd(argv[0]);
+
+ // cout << "bgfg command received: " << cmd << endl;
+ // cout << "bgfg command received: " << argv[1] << endl;
+ // cout << "bgfg command received: " << argv[2] << endl;
+
+  
+  if(strcmp("bg", argv[0]) == 0)
+  {
+
+	  printf("[%d] (%d) %s", jobp->jid, jobp->pid, jobp->cmdline); 
+	  jobp->state = BG;
+  }
+ 
+
 
   return;
 }
