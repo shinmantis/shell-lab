@@ -306,9 +306,14 @@ int builtin_cmd(char **argv)
   {
 	  do_bgfg(argv);
 	  return 1;
-
   }
 
+  if(strcmp("fg", argv[0]) == 0)
+  {
+	  do_bgfg(argv);
+	  return 1;
+
+  }
 
 
 
@@ -372,6 +377,17 @@ void do_bgfg(char **argv)
 	  printf("[%d] (%d) %s", jobp->jid, jobp->pid, jobp->cmdline); 
 	  jobp->state = BG;
   }
+
+  else if(strcmp("fg", argv[0]) == 0)
+  {
+	  
+	jobp->state = FG;
+	Kill(-jobp->pid, SIGCONT); //Resumes the signal after process is stopped from sigstp
+	waitfg(jobp->pid);
+
+
+  }
+  
  
 
 
@@ -512,11 +528,10 @@ void sigtstp_handler(int sig)
 
 	//cout << "sigstp_handler called with a a sign value of: " << sig << endl;
 
-
 	pid_t pid = fgpid(jobs);
 	job_t *stopjob = getjobpid(jobs, pid);
 	sigset_t maskALL, prevMask;
-
+	
 	if(sig == 20 && pid != 0)
 	{
 
