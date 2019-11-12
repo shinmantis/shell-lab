@@ -495,7 +495,7 @@ void sigtstp_handler(int sig)
 	{
 
 		
-		printf("Job [%d] (%d) stoppd by signal 20 \r\n", stopjob->jid, stopjob->pid);
+		printf("Job [%d] (%d) stopped by signal 20 \r\n", stopjob->jid, stopjob->pid);
 		Sigprocmask(SIG_BLOCK, &maskALL, &prevMask);
 		stopjob->state = ST;
 		Sigprocmask(SIG_SETMASK, &prevMask, NULL);	
