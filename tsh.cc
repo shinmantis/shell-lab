@@ -223,7 +223,7 @@ void eval(char *cmdline)
 		  //If this fails, print out an error message and exit ther process
 		  if(execvp(argv[0], argv) < 0)
 		  {
-			 printf("%s: Command not found!\n", argv[0]);
+			 printf("%s: Command not found\n", argv[0]);
 			 // cout <<  "builtin argv[0]" <<  " : " <<  argv[0] << endl;
 			  exit(0);
 		  }
@@ -436,67 +436,13 @@ void sigchld_handler(int sig)
 
 
 	//Recall that WNOHANG will return if none of the child processes have terminated yet
-	while((pid = waitpid(-1, &status, WUNTRACED | WNOHANG))> 0)
+	while((pid = waitpid(-1, &status, WNOHANG))> 0)
 	{
+		//cout << " WIFSIGNAELD uncaught error? " << WIFSIGNALED(status) << endl;
 
-
-		//cout << "Untraced triggered " << endl;
-		//cout << "Untraced status: " << (status) <<endl;
-		//cout << "Untraced pid: "<< pid << endl;
-		//cout << WNOHANG << endl;
-		//cout << WUNTRACED << endl;
-		//job = getjobpid(jobs, pid);
-
-		//cout << "WTERMSIG(status): " << WTERMSIG(status)  << endl;
-
-	        //if a child signal is stopped	
-		if(WSTOPPED)
-		{
-			//get th job id from the pid
-			int jid = pid2jid(pid);
-
-			//we are looking for a stop signal for this case
-			if(jid != 0 && WSTOPSIG(status) == 20)
-			{
-				//if the child was stopped by another signal show it here
-				printf("Job [%d] (%d) stopped by signal %d\r\n", jid, pid, WSTOPSIG(status));
-				
-				//update our job list to show that the job was stopped by another process signal
-				(getjobpid(jobs, pid))->state = ST;
-
-				return;
-			}
-
-
-		}
-		
-
-
-		if(WTERMSIG(status) == 2)
-		{
-			//get the job id from the pid
-
-			int jid = pid2jid(pid);
-
-			//we are looking for a terminate signal for this case
-			if(jid != 0)
-			{
-				//if the child was stopped by another signal show it here
-				printf("Job [%d] (%d) terminated by signal %d\r\n", jid, pid, SIGINT);
-				
-				//update our job list to show that the job was terminated by another process signal
-				deletejob(jobs, pid);
-
-				return;
-			}
-
-			
-		}
-		
 		deletejob(jobs,pid);
 	
 	}
-	
 	return;
 }
 
@@ -514,17 +460,17 @@ void sigint_handler(int sig)
 	//Get the foreground job id
 	pid_t pid  = fgpid(jobs);
 	
-	cout << "sig int handler caught: " << sig << " pid: " << pid << endl;	
+	//cout << "sig int handler caught: " << sig << " pid: " << pid << endl;	
 
 	//Use it to get the soon to be dead job
 	job_t *deadjob = getjobpid(jobs, pid);
 
 
-	if(sig == 2 && pid != 0)
+	if(sig == 2 )
 	{
 		//Print BEFORE terminating, otherwise the data is deleted.
 		printf("Job [%d] (%d) terminated by signal 2\r\n", deadjob->jid, deadjob->pid);
-		Kill(-pid, sig);
+		Kill(-pid, SIGKILL);
 	}
 
        	return;
